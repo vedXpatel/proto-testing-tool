@@ -5,8 +5,8 @@ import tempfile
 import types
 import pytest
 from unittest import mock
-from protobuf import app, ProtobufService, SAMPLE_PROTO_CONTENT
-from protobuf import sample_users, sample_products
+from protobuf_with_test_data import app, ProtobufService, SAMPLE_PROTO_CONTENT
+from protobuf_with_test_data import sample_users, sample_products
 import importlib
 
 # test_protobuf.py
