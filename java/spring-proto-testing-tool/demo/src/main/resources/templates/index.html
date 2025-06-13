@@ -1,0 +1,398 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <title>Protobuf API Consumer</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 30px;
+        }
+        
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 30px;
+        }
+        
+        .section {
+            margin: 30px 0;
+            padding: 25px;
+            border: 1px solid #e0e0e0;
+            border-radius: 6px;
+            background: #fafafa;
+        }
+        
+        .section h2 {
+            color: #555;
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 2px solid #007bff;
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        input[type="text"], input[type="url"], select, textarea {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+            box-sizing: border-box;
+        }
+        
+        input[type="file"] {
+            padding: 10px;
+            border: 2px dashed #007bff;
+            border-radius: 4px;
+            background: #f8f9ff;
+            width: 100%;
+        }
+        
+        textarea {
+            height: 120px;
+            resize: vertical;
+            font-family: 'Courier New', monospace;
+        }
+        
+        button {
+            background: #007bff;
+            color: white;
+            padding: 12px 24px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            font-weight: 600;
+            transition: background-color 0.3s;
+        }
+        
+        button:hover {
+            background: #0056b3;
+        }
+        
+        button:disabled {
+            background: #6c757d;
+            cursor: not-allowed;
+        }
+        
+        .result {
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+            border-radius: 4px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 400px;
+            overflow-y: auto;
+        }
+        
+        .success {
+            border-color: #28a745;
+            background-color: #d4edda;
+            color: #155724;
+        }
+        
+        .error {
+            border-color: #dc3545;
+            background-color: #f8d7da;
+            color: #721c24;
+        }
+        
+        .form-row {
+            display: flex;
+            gap: 15px;
+        }
+        
+        .form-row .form-group {
+            flex: 1;
+        }
+        
+        .loading {
+            display: none;
+            text-align: center;
+            padding: 20px;
+            color: #666;
+        }
+        
+        .spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
+            border-radius: 50%;
+            width: 30px;
+            height: 30px;
+            animation: spin 1s linear infinite;
+            margin: 0 auto 10px;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Protobuf API Consumer</h1>
+        <p style="text-align: center; color: #666; margin-bottom: 30px;">
+            Upload protobuf files, provide JSON input, and test protobuf-consuming APIs
+        </p>
+        
+        <div class="section">
+            <h2>1. Upload Protobuf File</h2>
+            <form id="uploadForm" enctype="multipart/form-data">
+                <div class="form-group">
+                    <label for="protoFile">Select .proto file:</label>
+                    <input type="file" id="protoFile" name="proto_file" accept=".proto" required>
+                </div>
+                <button type="submit">Upload & Compile</button>
+            </form>
+            
+            <div class="loading" id="uploadLoading">
+                <div class="spinner"></div>
+                <p>Compiling protobuf file...</p>
+            </div>
+            
+            <div id="uploadResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="section">
+            <h2>2. Test Protobuf API</h2>
+            <form id="testForm">
+                <div class="form-group">
+                    <label for="apiUrl">API URL:</label>
+                    <input type="url" id="apiUrl" name="api_url" placeholder="https://api.example.com/endpoint" required>
+                </div>
+                
+                <div class="form-row">
+                    <div class="form-group">
+                        <label for="messageType">Message Type:</label>
+                        <select id="messageType" name="message_type" required>
+                            <option value="">Select message type...</option>
+                            <option th:each="type : ${availableTypes}" th:value="${type}" th:text="${type}"></option>
+                        </select>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="method">HTTP Method:</label>
+                        <select id="method" name="method">
+                            <option value="POST">POST</option>
+                            <option value="PUT">PUT</option>
+                            <option value="GET">GET</option>
+                        </select>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="customHeaders">Custom Headers (JSON format):</label>
+                    <textarea id="customHeaders" name="headers" placeholder='{"Authorization": "Bearer token", "X-Custom": "value"}'></textarea>
+                </div>
+                
+                <div class="form-group">
+                    <label for="jsonPayload">JSON Payload:</label>
+                    <textarea id="jsonPayload" name="json_payload" placeholder="Enter JSON data that will be converted to protobuf..." required></textarea>
+                    <button type="button" id="generateSample" style="margin-top: 10px; background: #28a745;">Generate Sample JSON</button>
+                </div>
+                
+                <button type="submit">Send Protobuf Request</button>
+            </form>
+            
+            <div class="loading" id="testLoading">
+                <div class="spinner"></div>
+                <p>Sending protobuf request...</p>
+            </div>
+            
+            <div id="testResult" class="result" style="display: none;"></div>
+        </div>
+        
+        <div class="section">
+            <h2>3. Available Message Types</h2>
+            <button id="refreshTypes" type="button" style="background: #17a2b8;">Refresh Types</button>
+            <div id="messageTypes" class="result" style="display: none;"></div>
+        </div>
+    </div>
+    
+    <script>
+        // Upload form handler
+        document.getElementById('uploadForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loading = document.getElementById('uploadLoading');
+            const result = document.getElementById('uploadResult');
+            const formData = new FormData(this);
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch('/upload-proto', {
+                    method: 'POST',
+                    body: formData
+                });
+                
+                const data = await response.json();
+                
+                result.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                result.className = data.success ? 'result success' : 'result error';
+                result.style.display = 'block';
+                
+                if (data.success && data.available_types) {
+                    updateMessageTypeSelect(data.available_types);
+                }
+                
+            } catch (error) {
+                result.innerHTML = '<pre>Error: ' + error.message + '</pre>';
+                result.className = 'result error';
+                result.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+        
+        // Test form handler
+        document.getElementById('testForm').addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const loading = document.getElementById('testLoading');
+            const result = document.getElementById('testResult');
+            const formData = new FormData(this);
+            
+            // Parse form data
+            const requestData = {
+                api_url: formData.get('api_url'),
+                message_type: formData.get('message_type'),
+                method: formData.get('method'),
+                json_payload: formData.get('json_payload'),
+                headers: {}
+            };
+            
+            // Parse custom headers if provided
+            const headersText = formData.get('headers');
+            if (headersText && headersText.trim()) {
+                try {
+                    requestData.headers = JSON.parse(headersText);
+                } catch (e) {
+                    result.innerHTML = '<pre>Error: Invalid JSON in headers field</pre>';
+                    result.className = 'result error';
+                    result.style.display = 'block';
+                    return;
+                }
+            }
+            
+            loading.style.display = 'block';
+            result.style.display = 'none';
+            
+            try {
+                const response = await fetch('/test-api', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify(requestData)
+                });
+                
+                const data = await response.json();
+                
+                result.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                result.className = data.success ? 'result success' : 'result error';
+                result.style.display = 'block';
+                
+            } catch (error) {
+                result.innerHTML = '<pre>Error: ' + error.message + '</pre>';
+                result.className = 'result error';
+                result.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+            }
+        });
+        
+        // Generate sample JSON
+        document.getElementById('generateSample').addEventListener('click', async function() {
+            const messageType = document.getElementById('messageType').value;
+            if (!messageType) {
+                alert('Please select a message type first');
+                return;
+            }
+            
+            try {
+                const response = await fetch(`/api/sample-json/${messageType}`);
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('jsonPayload').value = data.sample_json;
+                } else {
+                    alert('Error generating sample: ' + data.error);
+                }
+            } catch (error) {
+                alert('Error: ' + error.message);
+            }
+        });
+        
+        // Refresh message types
+        document.getElementById('refreshTypes').addEventListener('click', async function() {
+            const result = document.getElementById('messageTypes');
+            
+            try {
+                const response = await fetch('/api/message-types');
+                const types = await response.json();
+                
+                result.innerHTML = '<pre>' + JSON.stringify(Array.from(types), null, 2) + '</pre>';
+                result.className = 'result success';
+                result.style.display = 'block';
+                
+                updateMessageTypeSelect(types);
+                
+            } catch (error) {
+                result.innerHTML = '<pre> Error: ' + error.message + '</pre>';
+                result.className = 'result error';
+                result.style.display = 'block';
+            }
+        });
+        
+        // Helper function to update message type select
+        function updateMessageTypeSelect(types) {
+            const select = document.getElementById('messageType');
+            
+            // Clear existing options except the first one
+            while (select.children.length > 1) {
+                select.removeChild(select.lastChild);
+            }
+            
+            // Add new options
+            types.forEach(type => {
+                const option = document.createElement('option');
+                option.value = type;
+                option.textContent = type;
+                select.appendChild(option);
+            });
+        }
+        
+        // Load message types on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            document.getElementById('refreshTypes').click();
+        });
+    </script>
+</body>
+</html>
