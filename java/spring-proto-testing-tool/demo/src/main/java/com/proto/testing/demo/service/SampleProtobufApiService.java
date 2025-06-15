@@ -58,4 +58,16 @@ public class SampleProtobufApiService {
         response.put("sample", json);
         return ResponseEntity.ok(response);
     }
+
+    /**
+     * Echoes back the protobuf message as a placeholder (stub implementation).
+     */
+    public ResponseEntity<?> echoProtobuf(String messageType, String jsonPayload) {
+        // TODO: Implement actual protobuf echo logic if needed
+        Map<String, Object> response = new HashMap<>();
+        response.put("messageType", messageType);
+        response.put("payload", jsonPayload);
+        response.put("echo", true);
+        return ResponseEntity.ok(response);
+    }
 }
